@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "source": "d:\\projects\\mini-design-studio\\README.md",
+  "generated": "2026-07-16T12:48:11.426Z",
+  "totalTokens": 1314,
+  "entries": [
+    {
+      "section": "✨ Features",
+      "slug": "✨-features",
+      "lineRange": [
+        6,
+        53
+      ],
+      "tokens": 468,
+      "keywords": [
+        "Interactive Canvas",
+        "Shape Tools",
+        "Image Import",
+        "Transformations",
+        "Smart Selection",
+        "Layer Panel",
+        "Visibility Control",
+        "Layer Ordering",
+        "Layer Selection",
+        "Delete Layers",
+        "Color Controls",
+        "Stroke Width",
+        "Opacity",
+        "Position",
+        "Text Editing",
+        "AI Image Generation",
+        "Undo/Redo",
+        "Clipboard",
+        "Keyboard Shortcuts",
+        "New Project",
+        "Open/Save",
+        "Export",
+        "Auto-save",
+        "File Menu",
+        "Edit Menu",
+        "Selection Menu",
+        "Layout Menu",
+        "Dark Theme",
+        "Adaptive Cursors",
+        "Smooth Animations",
+        "Custom Scrollbars",
+        "Responsive Panels",
+        "Canvas & Shapes",
+        "Layer Management",
+        "Property Editing",
+        "Advanced Features",
+        "File Operations",
+        "Menu System",
+        "UI Polish"
+      ],
+      "links": [],
+      "summary": "- **Interactive Canvas** - 800×600 pixel canvas powered by Konva. Interactive Canvas Shape Tools Image Import Transformations Smart Selection Layer Panel Visibility Control Layer Ordering Layer Select",
+      "aiHints": []
+    },
+    {
+      "section": "🛠 Tech Stack",
+      "slug": "🛠-tech-stack",
+      "lineRange": [
+        54,
+        63
+      ],
+      "tokens": 71,
+      "keywords": [
+        "Frontend Framework",
+        "Desktop Runtime",
+        "Canvas Library",
+        "PDF Generation",
+        "Build Tool",
+        "Styling",
+        "AI Generation"
+      ],
+      "links": [],
+      "summary": "Frontend Framework Desktop Runtime Canvas Library PDF Generation Build Tool Styling AI Generation",
+      "aiHints": []
+    },
+    {
+      "section": "📦 Installation",
+      "slug": "📦-installation",
+      "lineRange": [
+        64,
+        75
+      ],
+      "tokens": 33,
+      "keywords": [
+        "Prerequisites",
+        "Install Dependencies"
+      ],
+      "links": [],
+      "summary": "- Node.",
+      "aiHints": []
+    },
+    {
+      "section": "🚀 Usage",
+      "slug": "🚀-usage",
+      "lineRange": [
+        76,
+        100
+      ],
+      "tokens": 87,
+      "keywords": [
+        "Development Mode",
+        "Building for Production"
+      ],
+      "links": [],
+      "summary": "This will start the Electron app in development mode with hot-reload enabled.",
+      "aiHints": []
+    },
+    {
+      "section": "📖 How to Use",
+      "slug": "📖-how-to-use",
+      "lineRange": [
+        101,
+        142
+      ],
+      "tokens": 378,
+      "keywords": [
+        "Creating Shapes",
+        "Importing Images",
+        "AI Image Generation",
+        "Editing Properties",
+        "Managing Layers",
+        "Exporting",
+        "Keyboard Shortcuts"
+      ],
+      "links": [],
+      "summary": "1.",
+      "aiHints": []
+    },
+    {
+      "section": "📁 Project Structure",
+      "slug": "📁-project-structure",
+      "lineRange": [
+        143,
+        164
+      ],
+      "tokens": 142,
+      "keywords": [],
+      "links": [],
+      "summary": "│           │   ├── Canvas.",
+      "aiHints": []
+    },
+    {
+      "section": "🤝 Contributing",
+      "slug": "🤝-contributing",
+      "lineRange": [
+        165,
+        168
+      ],
+      "tokens": 21,
+      "keywords": [],
+      "links": [],
+      "summary": "Contributions are welcome!",
+      "aiHints": []
+    },
+    {
+      "section": "📝 License",
+      "slug": "📝-license",
+      "lineRange": [
+        169,
+        172
+      ],
+      "tokens": 16,
+      "keywords": [],
+      "links": [],
+      "summary": "This project is licensed under the MIT License.",
+      "aiHints": []
+    },
+    {
+      "section": "🙏 Acknowledgments",
+      "slug": "🙏-acknowledgments",
+      "lineRange": [
+        173,
+        179
+      ],
+      "tokens": 69,
+      "keywords": [
+        "Konva.js",
+        "Pollinations.ai",
+        "Electron",
+        "Svelte"
+      ],
+      "links": [
+        "https://konvajs.org/",
+        "https://pollinations.ai/",
+        "https://www.electronjs.org/",
+        "https://svelte.dev/"
+      ],
+      "summary": "- [Konva.",
+      "aiHints": []
+    },
+    {
+      "section": "📸 Screenshots",
+      "slug": "📸-screenshots",
+      "lineRange": [
+        180,
+        187
+      ],
+      "tokens": 29,
+      "keywords": [],
+      "links": [],
+      "summary": "",
+      "aiHints": []
+    }
+  ]
+}
