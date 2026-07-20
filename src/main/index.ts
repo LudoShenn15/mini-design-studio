@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { readFileSync, writeFileSync } from 'fs'
 
 let mainWindow: BrowserWindow
+let appMenu: Electron.Menu | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -23,6 +24,12 @@ function createWindow(): void {
     mainWindow.show()
   })
 
+  // Intercepter la fermeture pour demander au renderer s'il faut sauvegarder
+  mainWindow.on('close', (e) => {
+    e.preventDefault()
+    mainWindow.webContents.send('app:before-close')
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -34,10 +41,24 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  buildMenu()
+  appMenu = buildMenu()
 }
 
-function buildMenu(): void {
+// Permettre au renderer de masquer/montrer le menu (utile pour l'écran splash)
+ipcMain.on('app:set-menu-visible', (_event, visible: boolean) => {
+  try {
+    if (visible && appMenu) {
+      Menu.setApplicationMenu(appMenu)
+    } else {
+      Menu.setApplicationMenu(null)
+    }
+  } catch (err) {
+    console.error('Failed to set menu visibility', err)
+  }
+})
+
+
+function buildMenu(): Electron.Menu {
   const menu = Menu.buildFromTemplate([
     {
       label: 'Fichier',
@@ -59,7 +80,8 @@ function buildMenu(): void {
             })
             if (!result.canceled && result.filePaths[0]) {
               const content = readFileSync(result.filePaths[0], 'utf-8')
-              mainWindow.webContents.send('menu:open', content)
+              // Envoyer le contenu ET le chemin
+              mainWindow.webContents.send('menu:open', content, result.filePaths[0])
             }
           }
         },
@@ -103,7 +125,8 @@ function buildMenu(): void {
           label: 'Quitter',
           accelerator: 'CmdOrCtrl+Q',
           click: (): void => {
-            app.quit()
+            // Trigger the same before-close flow so the renderer can show SaveDialog
+            mainWindow.webContents.send('app:before-close')
           }
         }
       ]
@@ -277,6 +300,7 @@ function buildMenu(): void {
   ])
 
   Menu.setApplicationMenu(menu)
+  return menu
 }
 
 ipcMain.handle('dialog:save', async (_, data: string) => {
@@ -287,6 +311,19 @@ ipcMain.handle('dialog:save', async (_, data: string) => {
   if (!result.canceled && result.filePath) {
     writeFileSync(result.filePath, data, 'utf-8')
     return result.filePath
+  }
+  return null
+})
+
+// Ouvrir un fichier depuis le renderer
+ipcMain.handle('dialog:open', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    filters: [{ name: 'Design Studio', extensions: ['dsc'] }],
+    properties: ['openFile']
+  })
+  if (!result.canceled && result.filePaths[0]) {
+    const content = readFileSync(result.filePaths[0], 'utf-8')
+    return content
   }
   return null
 })
@@ -309,6 +346,33 @@ ipcMain.handle('clipboard:write', (_, data: string) => {
 
 ipcMain.handle('clipboard:read', () => {
   return clipboard.readText()
+})
+
+ipcMain.handle('file:save-to-path', (_, filePath: string, data: string) => {
+  try {
+    writeFileSync(filePath, data, 'utf-8')
+    return true
+  } catch {
+    return false
+  }
+})
+
+ipcMain.handle('dialog:open-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    filters: [{ name: 'Design Studio', extensions: ['dsc'] }],
+    properties: ['openFile']
+  })
+  if (!result.canceled && result.filePaths[0]) {
+    const content = readFileSync(result.filePaths[0], 'utf-8')
+    return { content, filePath: result.filePaths[0] }
+  }
+  return null
+})
+
+// Confirmer la fermeture envoyée par le renderer
+ipcMain.on('app:confirm-close', () => {
+  // Détruire la fenêtre sans déclencher à nouveau l'événement 'close'
+  mainWindow.destroy()
 })
 
 app.whenReady().then(() => {

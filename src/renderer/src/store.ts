@@ -13,18 +13,73 @@ export type CanvasElement = {
   width?: number
   height?: number
   radius?: number
+  radiusX?: number
+  radiusY?: number
   fill: string
   stroke: string
   strokeWidth: number
   opacity: number
   text?: string
   src?: string
-  radiusX?: number
-  radiusY?: number
   scaleX?: number
   scaleY?: number
   rotation?: number
+  // Texte
+  fontFamily?: string
+  fontSize?: number
+  fontStyle?: string   // 'normal' | 'bold' | 'italic' | 'bold italic'
+  textDecoration?: string  // 'underline' | ''
+  textTransform?: 'none' | 'uppercase' | 'lowercase'
+  // Rectangle
+  cornerRadius?: number
 }
+
+export type CanvasFormat = {
+  name: string
+  width: number
+  height: number
+}
+
+export type SaveFile = {
+  format: CanvasFormat
+  elements: CanvasElement[]
+}
+
+export const canvasFormat = writable<CanvasFormat>({
+  name: 'A4 Portrait',
+  width: 794,
+  height: 1123
+})
+
+export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'loading'
+
+export const toast = writable<{ message: string; type: ToastType; show: boolean }>({
+  message: '',
+  type: 'info',
+  show: false
+})
+
+let toastTimer: ReturnType<typeof setTimeout>
+
+export function showToast(message: string, type: ToastType = 'info', duration = 3000): void {
+  clearTimeout(toastTimer)
+  toast.set({ message, type, show: true })
+
+  // Le loading ne se ferme pas automatiquement
+  if (type === 'loading') return
+
+  toastTimer = setTimeout(() => {
+    toast.update((t) => ({ ...t, show: false }))
+  }, duration)
+}
+
+export function hideToast(): void {
+  clearTimeout(toastTimer)
+  toast.update((t) => ({ ...t, show: false }))
+}
+
+export const isDirty = writable(false)
+
 export interface ElementsStore extends Writable<CanvasElement[]> {
   undo: () => void
   redo: () => void
@@ -41,6 +96,8 @@ function createElementsStore(): ElementsStore {
     history.splice(historyIndex + 1)
     history.push(JSON.parse(JSON.stringify(state)))
     historyIndex = history.length - 1
+    // mark dirty when history changes
+    isDirty.set(true)
   }
 
   return {
@@ -60,11 +117,13 @@ function createElementsStore(): ElementsStore {
       if (historyIndex <= 0) return
       historyIndex--
       set(JSON.parse(JSON.stringify(history[historyIndex])))
+      isDirty.set(true)
     },
     redo: (): void => {
       if (historyIndex >= history.length - 1) return
       historyIndex++
       set(JSON.parse(JSON.stringify(history[historyIndex])))
+      isDirty.set(true)
     }
   }
 }
@@ -72,3 +131,4 @@ function createElementsStore(): ElementsStore {
 export const elements: ElementsStore = createElementsStore()
 export const selectedIds = writable<string[]>([])
 export const selectedId = derived(selectedIds, ($ids) => $ids[0] ?? null)
+export const zoomLevel = writable<number>(1)

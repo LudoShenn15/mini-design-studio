@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { activeTool, elements, type Tool } from '../store'
+  import { activeTool, elements, showToast, type Tool } from '../store'
 
   export let onExport: () => void
-  export let onGenerateAI: () => void
 
   const tools: { id: Tool; icon: string; title: string }[] = [
     { id: 'select', icon: '▷', title: 'Sélection' },
@@ -81,7 +80,12 @@
     {/each}
     <div class="separator"></div>
     <button title="Importer une image" on:click={importImage}>🖼</button>
-    <button title="Générer avec IA" on:click={onGenerateAI}>✨</button>
+    <button
+      title="Générer avec IA"
+      on:click={() => showToast('✨ Génération IA — Bientôt disponible !', 'info')}
+    >
+      ✨
+    </button>
     <div class="separator"></div>
     <button title="Exporter en PNG" on:click={onExport}>⬇</button>
   </div>

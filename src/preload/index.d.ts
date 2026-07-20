@@ -9,6 +9,9 @@ declare global {
       savePdf: (data: string) => Promise<string | null>
       clipboardWrite: (data: string) => Promise<void>
       clipboardRead: () => Promise<string>
+      openFile: () => Promise<string | null>
+      onBeforeClose: (cb: () => void) => void
+      confirmClose: () => void
     }
   }
 }

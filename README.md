@@ -1,187 +1,221 @@
 # Mini Design Studio
 
-A lightweight desktop visual editor inspired by Canva and Photoshop, built with Svelte, TypeScript, and Electron. Create stunning visuals by composing shapes, text, and images with full layer management, property editing, and export capabilities.
-
-![Mini Design Studio](https://img.shields.io/badge/Version-1.0.0-red) ![License](https://img.shields.io/badge/License-MIT-blue) ![Electron](https://img.shields.io/badge/Electron-Latest-9cf) ![Svelte](https://img.shields.io/badge/Svelte-4.0-orange)
-
-## ✨ Features
-
-### Canvas & Shapes
-- **Interactive Canvas** - 800×600 pixel canvas powered by Konva.js
-- **Shape Tools** - Rectangle, circle/ellipse, and text creation
-- **Image Import** - Import local images (PNG, JPG, etc.)
-- **Transformations** - Selection, movement, resize, rotation, and free deformation
-- **Smart Selection** - Single click, Ctrl+click for multi-select, Shift+click for range selection
-
-### Layer Management
-- **Layer Panel** - Visual layer list with icons
-- **Visibility Control** - Show/hide layers
-- **Layer Ordering** - Move layers up/down, bring to front/back
-- **Layer Selection** - Select directly from the panel
-- **Delete Layers** - Remove unwanted elements
-
-### Property Editing
-- **Color Controls** - Fill and stroke color pickers
-- **Stroke Width** - Adjustable border thickness
-- **Opacity** - Transparency control
-- **Position** - X/Y coordinate editing
-- **Text Editing** - Double-click to edit text inline
-
-### Advanced Features
-- **AI Image Generation** - Generate images via Pollinations.ai (free, no API key required)
-- **Undo/Redo** - Full history support (Ctrl+Z / Ctrl+Y)
-- **Clipboard** - Copy/paste with persistent clipboard support
-- **Keyboard Shortcuts** - Efficient workflow with hotkeys
-
-### File Operations
-- **New Project** - Start fresh
-- **Open/Save** - Save and load `.dsc` project files
-- **Export** - Export to PNG, JPG, or PDF
-- **Auto-save** - Automatic project saving
-
-### Menu System
-- **File Menu** - New, Open, Save, Save As, Exports, Quit
-- **Edit Menu** - Undo, Redo, Cut, Copy, Paste, Duplicate, Delete
-- **Selection Menu** - Select All, Deselect, Invert Selection
-- **Layout Menu** - Layer ordering, alignments, distribution
-
-### UI Polish
-- **Dark Theme** - Navy/red color scheme
-- **Adaptive Cursors** - Context-aware cursor changes
-- **Smooth Animations** - Hover effects and transitions
-- **Custom Scrollbars** - Styled scrollbars matching the theme
-- **Responsive Panels** - Sticky headers and smooth scrolling
-
-## 🛠 Tech Stack
-
-- **Frontend Framework** - Svelte 4 with TypeScript
-- **Desktop Runtime** - Electron
-- **Canvas Library** - Konva.js
-- **PDF Generation** - jsPDF
-- **Build Tool** - Vite with Electron Vite
-- **Styling** - CSS with custom properties
-- **AI Generation** - Pollinations.ai (free API)
-
-## 📦 Installation
-
-### Prerequisites
-- Node.js 18+ and npm
-- Git (optional, for cloning)
-
-### Install Dependencies
-
-```bash
-npm install
-```
-
-## 🚀 Usage
-
-### Development Mode
-
-```bash
-npm run dev
-```
-
-This will start the Electron app in development mode with hot-reload enabled.
-
-### Building for Production
-
-```bash
-# Windows
-npm run build:win
-
-# macOS
-npm run build:mac
-
-# Linux
-npm run build:linux
-```
-
-The built application will be in the `out/` directory.
-
-## 📖 How to Use
-
-### Creating Shapes
-1. Select a tool from the left toolbar (Rectangle, Circle, or Text)
-2. Click on the canvas to place the shape
-3. Use the transformer handles to resize and rotate
-
-### Importing Images
-1. Click the image icon (🖼) in the toolbar
-2. Select an image file from your computer
-3. The image will be added to the canvas
-
-### AI Image Generation
-1. Click the AI button (✨) in the toolbar
-2. Enter a description of the image you want
-3. Press Enter or click "Générer"
-4. The generated image will be added to your canvas
-
-### Editing Properties
-1. Select an element on the canvas or from the layer panel
-2. Use the Properties panel to adjust colors, opacity, position, etc.
-3. Changes are applied in real-time
-
-### Managing Layers
-1. Use the Layer panel to view all elements
-2. Click the eye icon (👁/🙈) to toggle visibility
-3. Use arrow buttons (↑/↓) to reorder layers
-4. Click the X button to delete a layer
-
-### Exporting
-1. Click the export button (⬇) in the toolbar or use File → Export
-2. Choose your preferred format (PNG, JPG, or PDF)
-3. The file will be downloaded to your computer
-
-### Keyboard Shortcuts
-- `Ctrl+Z` - Undo
-- `Ctrl+Y` - Redo
-- `Delete` - Delete selected elements
-- `Ctrl+Click` - Multi-select
-- `Shift+Click` - Range select
-- `Escape` - Close dialogs
-
-## 📁 Project Structure
-
-```
-mini-design-studio/
-├── src/
-│   ├── electron/          # Electron main process
-│   └── renderer/          # Svelte frontend
-│       └── src/
-│           ├── components/ # Svelte components
-│           │   ├── Canvas.svelte
-│           │   ├── Toolbar.svelte
-│           │   ├── LayerPanel.svelte
-│           │   ├── PropertiesPanel.svelte
-│           │   └── AIDialog.svelte
-│           ├── assets/     # CSS and assets
-│           ├── App.svelte  # Main app component
-│           └── store.ts    # Svelte stores
-├── package.json
-├── electron.vite.config.ts
-└── tsconfig.json
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is licensed under the MIT License.
-
-## 🙏 Acknowledgments
-
-- [Konva.js](https://konvajs.org/) for the canvas library
-- [Pollinations.ai](https://pollinations.ai/) for free AI image generation
-- [Electron](https://www.electronjs.org/) for desktop app framework
-- [Svelte](https://svelte.dev/) for the reactive UI framework
-
-## 📸 Screenshots
-
-*Add screenshots here showing the application interface*
+![Version](https://img.shields.io/badge/Version-1.0.0-red) ![License](https://img.shields.io/badge/Licence-MIT-blue) ![Electron](https://img.shields.io/badge/Electron-39-9cf) ![Svelte](https://img.shields.io/badge/Svelte-5-orange) ![Konva](https://img.shields.io/badge/Konva.js-Canvas-green)
 
 ---
 
-Made with ❤️ using Svelte, TypeScript, and Electron
+## 🇫🇷 Français
+
+Un éditeur visuel desktop léger inspiré de Canva et Photoshop, développé avec Svelte, TypeScript et Electron dans le cadre du projet **Dynadoc Canvas Engineering** chez [Dashmake](https://dashmake.com/). Composez des visuels à partir de formes, textes et images avec une gestion complète des calques, des propriétés et des exports.
+
+### ✨ Fonctionnalités
+
+#### Canvas & Formes
+- **Canvas interactif** — taille personnalisable selon le format choisi (A3, A4, A5, réseaux sociaux, personnalisé…)
+- **Outils de dessin** — Rectangle, Cercle/Ellipse (déformable), Texte
+- **Import d'image** — PNG, JPG et autres formats courants
+- **Transformations** — Sélection, déplacement, redimensionnement, rotation, déformation libre
+- **Sélection intelligente** — Clic simple, Ctrl+Clic (multi-sélection), Shift+Clic (sélection par plage), dessin d'un rectangle de sélection
+- **Déplacement au clavier** — Touches directionnelles (1px), Shift+flèche (10px)
+
+#### Gestion des calques
+- **Panneau calques** — Liste visuelle de tous les éléments
+- **Visibilité** — Afficher/masquer chaque calque
+- **Ordre** — Monter/descendre, premier plan/arrière-plan
+- **Sélection depuis le panneau** — Clic sur le calque pour sélectionner l'élément
+- **Suppression** — Via le panneau, la touche Delete ou le menu Édition
+
+#### Propriétés des éléments
+- **Couleur** — Remplissage et bordure avec color picker
+- **Épaisseur de bordure** — Slider de 0 à 20px
+- **Opacité** — De 0 à 100%
+- **Position** — X et Y modifiables
+- **Rotation** — Slider de -180° à 180° ou via le transformer
+- **Arrondi des bords** — Pour les rectangles (0 à 200px)
+- **Texte** — Police, taille, gras, italique, souligné, majuscules/minuscules
+
+#### Fonctionnalités avancées
+- **Undo/Redo** — Historique complet (Ctrl+Z / Ctrl+Y)
+- **Presse-papier persistant** — Couper, Copier, Coller entre sessions (Ctrl+X / Ctrl+C / Ctrl+V)
+- **Duplication** — Ctrl+D
+- **Zoom** — Ctrl+Molette, Ctrl++ / Ctrl+- / Ctrl+0, barre de zoom en bas du canvas
+- **Génération IA** — Bientôt disponible ✨
+
+#### Fichiers & Exports
+- **Nouveau fichier** — Choix du format de papier (ISO, réseaux sociaux, personnalisé)
+- **Ouvrir/Enregistrer** — Fichiers `.dsc` (format natif JSON)
+- **Enregistrer sous** — Ctrl+Shift+S
+- **Export PNG** — Ctrl+E
+- **Export JPG**
+- **Export PDF**
+- **Sauvegarde avec feedback** — Spinner + toast de confirmation
+- **Protection contre la perte de données** — Demande d'enregistrement avant fermeture ou nouveau fichier
+
+#### Menu complet (style Photoshop)
+- **Fichier** — Nouveau, Ouvrir, Enregistrer, Enregistrer sous, Exports, Quitter
+- **Édition** — Annuler, Rétablir, Couper, Copier, Coller, Dupliquer, Supprimer
+- **Sélection** — Tout sélectionner, Désélectionner, Inverser la sélection
+- **Disposition** — Premier plan, Avancer, Reculer, Arrière-plan, Alignements (gauche, centre, droite, haut, milieu, bas), Distribution (horizontale, verticale)
+
+### 🛠 Stack technique
+
+| Technologie | Rôle |
+|---|---|
+| **Svelte 5 + TypeScript** | Framework frontend réactif |
+| **Electron 39** | Application desktop cross-platform |
+| **Konva.js** | Moteur canvas 2D interactif |
+| **Vite + electron-vite** | Build tool |
+| **jsPDF** | Export PDF |
+| **Tailwind CSS + UnoCSS** | Styles utilitaires |
+
+### 📦 Installation
+
+**Prérequis** : Node.js 18+ et npm
+
+```bash
+# Cloner le dépôt
+git clone https://github.com/LudoShenn15/mini-design-studio.git
+cd mini-design-studio
+
+# Installer les dépendances
+npm install
+```
+
+### 🚀 Lancement
+
+```bash
+# Mode développement
+npm run dev
+
+# Build Windows
+npm run build:win
+
+# Build macOS
+npm run build:mac
+
+# Build Linux
+npm run build:linux
+```
+
+### ⌨️ Raccourcis clavier
+
+| Raccourci | Action |
+|---|---|
+| `Ctrl+N` | Nouveau fichier |
+| `Ctrl+O` | Ouvrir |
+| `Ctrl+S` | Enregistrer |
+| `Ctrl+Shift+S` | Enregistrer sous |
+| `Ctrl+E` | Exporter en PNG |
+| `Ctrl+Z` | Annuler |
+| `Ctrl+Y` | Rétablir |
+| `Ctrl+C` | Copier |
+| `Ctrl+X` | Couper |
+| `Ctrl+V` | Coller |
+| `Ctrl+D` | Dupliquer |
+| `Ctrl+A` | Tout sélectionner |
+| `Delete` | Supprimer la sélection |
+| `Ctrl+Click` | Ajouter à la sélection |
+| `Shift+Click` | Sélection par plage |
+| `Flèches` | Déplacer (1px) |
+| `Shift+Flèches` | Déplacer (10px) |
+| `Ctrl++/-` | Zoom avant/arrière |
+| `Ctrl+0` | Réinitialiser le zoom |
+| `Double clic` | Éditer un texte |
+| `Échap` | Fermer les dialogues |
+
+### 📁 Structure du projet
+
+```
+mini-design-studio/
+├── electron/
+│   ├── main.ts          # Processus principal Electron (menu, IPC, fichiers)
+│   └── preload/
+│       └── index.ts     # Pont IPC renderer ↔ main
+├── src/renderer/src/
+│   ├── components/
+│   │   ├── Canvas.svelte          # Canvas Konva + toute la logique
+│   │   ├── Toolbar.svelte         # Barre d'outils gauche
+│   │   ├── LayerPanel.svelte      # Panneau calques
+│   │   ├── PropertiesPanel.svelte # Panneau propriétés
+│   │   ├── SplashScreen.svelte    # Écran de démarrage
+│   │   ├── NewFileDialog.svelte   # Choix du format
+│   │   ├── SaveDialog.svelte      # Dialogue enregistrement
+│   │   ├── ZoomBar.svelte         # Barre de zoom
+│   │   └── Toast.svelte           # Notifications
+│   ├── App.svelte       # Composant racine
+│   └── store.ts         # Stores Svelte (éléments, format, zoom, toast…)
+├── package.json
+└── electron.vite.config.ts
+```
+
+### 👨‍💻 Auteur
+
+**Komi Ludovic AGBO** — Creative Technologist · Développeur Frontend · Graphiste Freelance
+- GitHub : [@LudoShenn15](https://github.com/LudoShenn15)
+- Email : sherfeldstr@gmail.com
+
+### 📝 Licence
+
+Ce projet est sous licence MIT.
+
+---
+
+## 🇬🇧 English
+
+A lightweight desktop visual editor inspired by Canva and Photoshop, built with Svelte, TypeScript and Electron as part of the **Dynadoc Canvas Engineering** project at [Dashmake](https://dashmake.com/). Compose visuals using shapes, text, and images with full layer management, property editing, and export capabilities.
+
+### ✨ Features
+
+#### Canvas & Shapes
+- **Interactive canvas** — customizable size based on chosen format (A3, A4, A5, social media, custom…)
+- **Drawing tools** — Rectangle, Circle/Ellipse (deformable), Text
+- **Image import** — PNG, JPG and other common formats
+- **Transformations** — Selection, movement, resize, rotation, free deformation
+- **Smart selection** — Single click, Ctrl+click (multi-select), Shift+click (range select), rectangle selection drawing
+- **Keyboard movement** — Arrow keys (1px), Shift+arrow (10px)
+
+#### Layer Management
+- Full layer panel with visibility, ordering, selection and deletion
+
+#### Property Editing
+- Fill & stroke color, opacity, position, rotation, corner radius (rect), font family, size, bold/italic/underline, text transform
+
+#### Advanced Features
+- **Undo/Redo** — Full history (Ctrl+Z / Ctrl+Y)
+- **Persistent clipboard** — Cut, Copy, Paste across sessions
+- **Zoom** — Ctrl+Wheel, Ctrl++ / Ctrl+- / Ctrl+0, zoom bar
+- **AI Generation** — Coming soon ✨
+
+#### Files & Exports
+- New file with paper format selection, Open/Save `.dsc` files, Export PNG/JPG/PDF
+- Save feedback with spinner + toast notification
+- Data protection — prompt to save before closing or creating new file
+
+#### Full Menu (Photoshop-style)
+- File, Edit, Selection, Layout menus with full keyboard shortcuts
+
+### 🛠 Tech Stack
+
+Svelte 5 · TypeScript · Electron 39 · Konva.js · Vite · jsPDF · UnoCSS
+
+### 📦 Installation
+
+```bash
+git clone https://github.com/LudoShenn15/mini-design-studio.git
+cd mini-design-studio
+npm install
+npm run dev
+```
+
+### 👨‍💻 Author
+
+**Komi Ludovic AGBO** — Creative Technologist · Frontend Developer · Freelance Graphic Designer
+- GitHub : [@LudoShenn15](https://github.com/LudoShenn15)
+
+### 📝 License
+
+MIT License
+
+---
+
+*Developed using Svelte, TypeScript and Electron*

@@ -1,7 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import Konva from 'konva'
-  import { activeTool, elements, selectedIds, selectedId, type CanvasElement } from '../store'
+  import {
+    activeTool,
+    elements,
+    selectedIds,
+    selectedId,
+    canvasFormat,
+    showToast,
+    hideToast,
+    isDirty,
+    zoomLevel,
+    type CanvasElement,
+    type SaveFile,
+    type CanvasFormat
+  } from '../store'
+
+  export let onMounted: (() => void) | null = null
 
   let container: HTMLDivElement
   let stage: Konva.Stage
@@ -9,8 +24,30 @@
   let transformer: Konva.Transformer
   let isTransforming = false
 
+  // Sélection par rectangle
+  let selectionRect: Konva.Rect | null = null
+  let isSelecting = false
+  let selectionStart = { x: 0, y: 0 }
+
   function generateId(): string {
     return Math.random().toString(36).substr(2, 9)
+  }
+
+  function applyZoom(scale: number): void {
+    const clampedScale = Math.min(Math.max(scale, 0.1), 5)
+    zoomLevel.set(clampedScale)
+  }
+
+  export function zoomIn(): void {
+    applyZoom($zoomLevel * 1.1)
+  }
+
+  export function zoomOut(): void {
+    applyZoom($zoomLevel / 1.1)
+  }
+
+  export function resetZoom(): void {
+    applyZoom(1)
   }
 
   function addShape(el: CanvasElement): void {
@@ -52,9 +89,15 @@
         x: el.x,
         y: el.y,
         text: el.text ?? 'Texte',
-        fontSize: 24,
+        fontSize: el.fontSize ?? 24,
+        fontFamily: el.fontFamily ?? 'Arial',
+        fontStyle: el.fontStyle ?? 'normal',
+        textDecoration: el.textDecoration ?? '',
         fill: el.fill,
         opacity: el.opacity,
+        scaleX: el.scaleX ?? 1,
+        scaleY: el.scaleY ?? 1,
+        rotation: el.rotation ?? 0,
         draggable: true
       })
     } else if (el.type === 'image') {
@@ -71,11 +114,31 @@
           draggable: true
         })
 
-        img.on('click', () => {
-          selectedIds.set([el.id])
-          transformer.nodes([img])
-          transformer.moveToTop()
-          layer.draw()
+        img.on('click', (e) => {
+          const isShift = e.evt.shiftKey
+          const isCtrl = e.evt.ctrlKey
+
+          if (isCtrl) {
+            selectedIds.update((ids) =>
+              ids.includes(el.id) ? ids.filter((id) => id !== el.id) : [...ids, el.id]
+            )
+          } else if (isShift) {
+            const allIds = $elements.map((e) => e.id)
+            const currentIds = $selectedIds
+            if (currentIds.length === 0) {
+              selectedIds.set([el.id])
+              return
+            }
+            const lastId = currentIds[currentIds.length - 1]
+            const lastIndex = allIds.indexOf(lastId)
+            const currentIndex = allIds.indexOf(el.id)
+            const start = Math.min(lastIndex, currentIndex)
+            const end = Math.max(lastIndex, currentIndex)
+            const rangeIds = allIds.slice(start, end + 1)
+            selectedIds.update((ids) => [...new Set([...ids, ...rangeIds])])
+          } else {
+            selectedIds.set([el.id])
+          }
         })
 
         img.on('dragend', () => {
@@ -123,16 +186,28 @@
     }
 
     shape.on('click', (e) => {
+      // Pas de restriction sur l'outil — on sélectionne toujours
       const isShift = e.evt.shiftKey
       const isCtrl = e.evt.ctrlKey
 
-      if (isShift || isCtrl) {
-        selectedIds.update((ids) => {
-          if (ids.includes(el.id)) {
-            return ids.filter((id) => id !== el.id)
-          }
-          return [...ids, el.id]
-        })
+      if (isCtrl) {
+        selectedIds.update((ids) =>
+          ids.includes(el.id) ? ids.filter((id) => id !== el.id) : [...ids, el.id]
+        )
+      } else if (isShift) {
+        const allIds = $elements.map((e) => e.id)
+        const currentIds = $selectedIds
+        if (currentIds.length === 0) {
+          selectedIds.set([el.id])
+          return
+        }
+        const lastId = currentIds[currentIds.length - 1]
+        const lastIndex = allIds.indexOf(lastId)
+        const currentIndex = allIds.indexOf(el.id)
+        const start = Math.min(lastIndex, currentIndex)
+        const end = Math.max(lastIndex, currentIndex)
+        const rangeIds = allIds.slice(start, end + 1)
+        selectedIds.update((ids) => [...new Set([...ids, ...rangeIds])])
       } else {
         selectedIds.set([el.id])
       }
@@ -156,7 +231,7 @@
             y: shape.y(),
             scaleX,
             scaleY,
-            rotation: shape.rotation(),
+            rotation: shape.rotation()
           }
 
           if (el.type === 'rect') {
@@ -268,7 +343,7 @@
     // Add entry animation
     shape.opacity(0)
     shape.scale({ x: 0.8, y: 0.8 })
-    
+
     layer.add(shape)
     transformer.moveToTop()
     layer.draw()
@@ -283,11 +358,107 @@
     })
   }
 
+  // Exposed APIs and current file path
+  const w = window as unknown as {
+    api: {
+      onMenu: (channel: string, cb: (...args: unknown[]) => void) => void
+      saveFile: (data: string) => Promise<string | null>
+      savePdf: (data: string) => Promise<string | null>
+      clipboardWrite: (data: string) => Promise<void>
+      clipboardRead: () => Promise<string>
+      openFile: () => Promise<string | null>
+      saveToPath: (filePath: string, data: string) => Promise<boolean>
+      onBeforeClose: (cb: () => void) => void
+      confirmClose: () => void
+      setMenuVisible: (visible: boolean) => void
+    }
+  }
+  let currentFilePath: string | null = null
+
+  function loadFile(content: string, filePath?: string): void {
+    try {
+      if (filePath) currentFilePath = filePath
+
+      const parsed = JSON.parse(content) as SaveFile
+
+      // 1. Détruire toutes les shapes existantes sur le canvas
+      layer.getChildren().forEach((shape) => {
+        if (shape === transformer) return
+        shape.destroy()
+      })
+      transformer.nodes([])
+
+      // 2. Charger le format et les éléments
+      if (Array.isArray(parsed)) {
+        elements.set(parsed)
+      } else {
+        canvasFormat.set(parsed.format)
+        elements.set(parsed.elements)
+      }
+
+      // 3. Redimensionner le stage selon le format chargé
+      const format = Array.isArray(parsed) ? $canvasFormat : parsed.format
+      stage.width(format.width)
+      stage.height(format.height)
+
+      // 4. Forcer le redessin de tous les éléments
+      const els = Array.isArray(parsed) ? parsed : parsed.elements
+      els.forEach((el) => addShape(el))
+
+      selectedIds.set([])
+      isDirty.set(false)
+      layer.draw()
+      showToast('Fichier ouvert', 'success')
+    } catch {
+      showToast('Fichier invalide ou corrompu', 'error')
+    }
+  }
+
+  async function doSave(): Promise<void> {
+    showToast('Enregistrement en cours...', 'loading')
+    const saveData = JSON.stringify({ format: $canvasFormat, elements: $elements })
+
+    if (currentFilePath) {
+      const ok = await w.api.saveToPath(currentFilePath, saveData)
+      hideToast()
+      if (ok) {
+        isDirty.set(false)
+        showToast('Fichier enregistré ✓', 'success')
+      } else {
+        showToast("Erreur lors de l'enregistrement", 'error')
+      }
+    } else {
+      currentFilePath = await w.api.saveFile(saveData)
+      hideToast()
+      if (currentFilePath) {
+        isDirty.set(false)
+        showToast('Fichier enregistré ✓', 'success')
+      }
+    }
+  }
+
+  // Écouter la création d'un nouveau fichier (format) depuis App.svelte
+  window.addEventListener('app:create-new', () => {
+    if (!layer) return
+    // Détruire toutes les shapes et réinitialiser l'état
+    layer.getChildren().forEach((shape) => {
+      if (shape === transformer) return
+      shape.destroy()
+    })
+    transformer.nodes([])
+    elements.set([])
+    selectedIds.set([])
+    currentFilePath = null
+    // le format est appliqué via le store canvasFormat — le reactive block ajuste la stage
+    layer.draw()
+    showToast('Nouveau fichier créé', 'success')
+  })
+
   onMount(() => {
     stage = new Konva.Stage({
       container: container,
-      width: 800,
-      height: 600
+      width: $canvasFormat.width,
+      height: $canvasFormat.height
     })
 
     layer = new Konva.Layer()
@@ -296,8 +467,25 @@
     transformer = new Konva.Transformer()
     layer.add(transformer)
 
+    // Écouter les événements de redimensionnement du canvas
+    window.addEventListener('canvas:resize', (e: Event) => {
+      const format = (e as CustomEvent<CanvasFormat>).detail
+      stage.width(format.width)
+      stage.height(format.height)
+      layer.draw()
+    })
+
+    // Notifier App que le canvas est prêt
+    onMounted?.()
+
+    // Écouter le chargement différé depuis le splash screen
+    window.addEventListener('canvas:load-file', (e: Event) => {
+      const { content, filePath } = (e as CustomEvent).detail
+      loadFile(content, filePath)
+    })
+
     // Raccourcis clavier — Undo / Redo / Delete
-    window.addEventListener('keydown', (e: KeyboardEvent) => {
+    window.addEventListener('keydown', async (e: KeyboardEvent) => {
       // Undo (Ctrl/Cmd + Z)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
@@ -323,55 +511,88 @@
         transformer.nodes([])
         layer.draw()
       }
+
+      // Save (Ctrl/Cmd + S)
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        await doSave()
+        return
+      }
+
+      // Déplacement avec touches directionnelles
+      const STEP = e.shiftKey ? 10 : 1 // Shift = grands pas
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault()
+        if ($selectedIds.length === 0) return
+
+        elements.update((els) =>
+          els.map((el) => {
+            if (!$selectedIds.includes(el.id)) return el
+            return {
+              ...el,
+              x: el.x + (e.key === 'ArrowRight' ? STEP : e.key === 'ArrowLeft' ? -STEP : 0),
+              y: el.y + (e.key === 'ArrowDown' ? STEP : e.key === 'ArrowUp' ? -STEP : 0)
+            }
+          })
+        )
+        return
+      }
+
+      // Zoom shortcuts
+      if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault()
+        applyZoom($zoomLevel * 1.1)
+      }
+      if (e.ctrlKey && e.key === '-') {
+        e.preventDefault()
+        applyZoom($zoomLevel / 1.1)
+      }
+      if (e.ctrlKey && e.key === '0') {
+        e.preventDefault()
+        applyZoom(1)
+      }
+    })
+
+    // Zoom with Ctrl+MouseWheel
+    stage.on('wheel', (e) => {
+      e.evt.preventDefault()
+      if (!e.evt.ctrlKey) return
+
+      const scaleBy = 1.08
+      const newScale = e.evt.deltaY < 0 ? $zoomLevel * scaleBy : $zoomLevel / scaleBy
+      applyZoom(newScale)
+    })
+
+    // Zoom slider event listener
+    window.addEventListener('zoom:set', (e: Event) => {
+      const scale = (e as CustomEvent<number>).detail
+      applyZoom(scale)
     })
 
     // --- Electron menu IPC (renderer) ---
-    const w = window as unknown as {
-      api?: {
-        onMenu: (channel: string, cb: (...args: unknown[]) => void) => void
-        saveFile: (data: string) => Promise<string | null>
-        savePdf: (data: string) => Promise<string | null>
-        clipboardWrite: (data: string) => Promise<void>
-        clipboardRead: () => Promise<string>
-      }
-    }
 
     if (w.api && typeof w.api.onMenu === 'function') {
       w.api.onMenu('menu:new', () => {
-        layer.getChildren().forEach((shape) => {
-          if (shape === transformer) return
-          shape.destroy()
-        })
-        transformer.nodes([])
-        elements.set([])
-        selectedIds.set([])
-        layer.draw()
+        // Ouvrir la modale de création de nouveau fichier dans App.svelte
+        window.dispatchEvent(new CustomEvent('app:new-file'))
       })
 
-      w.api.onMenu('menu:open', (content: unknown) => {
-        try {
-          const parsed = JSON.parse(content as string) as CanvasElement[]
-          elements.set(parsed)
-          selectedIds.set([])
-        } catch {
-          console.error('Fichier invalide')
-        }
+      w.api.onMenu('menu:open', (content: unknown, filePath?: unknown) => {
+        loadFile(content as string, filePath as string)
       })
-
-      let currentFilePath: string | null = null
 
       w.api.onMenu('menu:save', async () => {
-        const data = JSON.stringify($elements)
-        if (currentFilePath) {
-          const { writeFileSync } = await import('fs')
-          writeFileSync(currentFilePath, data, 'utf-8')
-        } else {
-          currentFilePath = await w.api.saveFile(data)
-        }
+        await doSave()
       })
 
       w.api.onMenu('menu:save-as', async () => {
-        currentFilePath = await w.api.saveFile(JSON.stringify($elements))
+        const saveData = JSON.stringify({ format: $canvasFormat, elements: $elements })
+        currentFilePath = await w.api.saveFile(saveData)
+        if (currentFilePath) {
+          isDirty.set(false)
+          showToast('Fichier enregistré', 'success')
+        }
       })
 
       w.api.onMenu('menu:export-png', () => {
@@ -382,6 +603,7 @@
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        showToast('Export PNG réussi', 'success')
       })
 
       w.api.onMenu('menu:export-jpg', () => {
@@ -392,6 +614,7 @@
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
+        showToast('Export JPG réussi', 'success')
       })
 
       w.api.onMenu('menu:export-pdf', async () => {
@@ -401,6 +624,7 @@
         pdf.addImage(dataURL, 'PNG', 10, 10, 277, 190)
         const pdfData = pdf.output('datauristring').split(',')[1]
         await w.api.savePdf(pdfData)
+        showToast('Export PDF réussi', 'success')
       })
 
       w.api.onMenu('menu:undo', () => {
@@ -439,7 +663,7 @@
           elements.update((els) => [...els, ...newEls])
           selectedIds.set(newEls.map((e) => e.id))
         } catch {
-          console.error('Presse-papier invalide')
+          showToast('Rien à coller', 'warning')
         }
       })
 
@@ -524,15 +748,17 @@
         const selected = $elements.filter((e) => $selectedIds.includes(e.id))
         const minX = Math.min(...selected.map((e) => e.x))
         const minY = Math.min(...selected.map((e) => e.y))
-        const maxX = Math.max(...selected.map((e) => e.x + (e.width ?? (e.radiusX ?? e.radius ?? 0))))
-        const maxY = Math.max(...selected.map((e) => e.y + (e.height ?? (e.radiusY ?? e.radius ?? 0))))
+        const maxX = Math.max(...selected.map((e) => e.x + (e.width ?? e.radiusX ?? e.radius ?? 0)))
+        const maxY = Math.max(
+          ...selected.map((e) => e.y + (e.height ?? e.radiusY ?? e.radius ?? 0))
+        )
         return { minX, minY, maxX, maxY }
       }
 
       const getElementSize = (e: CanvasElement): { w: number; h: number } => {
         return {
-          w: e.width ?? (e.radiusX ?? e.radius ? (e.radiusX ?? e.radius) * 2 : 0),
-          h: e.height ?? (e.radiusY ?? e.radius ? (e.radiusY ?? e.radius) * 2 : 0)
+          w: e.width ?? ((e.radiusX ?? e.radius) ? (e.radiusX ?? e.radius) * 2 : 0),
+          h: e.height ?? ((e.radiusY ?? e.radius) ? (e.radiusY ?? e.radius) * 2 : 0)
         }
       }
 
@@ -598,7 +824,10 @@
 
       w.api.onMenu('menu:distribute-h', () => {
         const selected = $elements.filter((e) => $selectedIds.includes(e.id))
-        if (selected.length < 3) return
+        if (selected.length < 3) {
+          showToast('Sélectionne au moins 3 éléments pour distribuer', 'warning')
+          return
+        }
         const sorted = [...selected].sort((a, b) => a.x - b.x)
         const totalWidth = sorted.reduce((acc, e) => acc + getElementSize(e).w, 0)
         const gap =
@@ -620,7 +849,10 @@
 
       w.api.onMenu('menu:distribute-v', () => {
         const selected = $elements.filter((e) => $selectedIds.includes(e.id))
-        if (selected.length < 3) return
+        if (selected.length < 3) {
+          showToast('Sélectionne au moins 3 éléments pour distribuer', 'warning')
+          return
+        }
         const sorted = [...selected].sort((a, b) => a.y - b.y)
         const totalHeight = sorted.reduce((acc, e) => acc + getElementSize(e).h, 0)
         const gap =
@@ -649,8 +881,109 @@
       }
     })
 
-    stage.on('mousedown', () => {
+    // Sélection par rectangle - mousemove
+    stage.on('mousemove', () => {
+      if (!isSelecting || !selectionRect) return
+
+      const pos = stage.getPointerPosition()!
+      const x = Math.min(pos.x, selectionStart.x)
+      const y = Math.min(pos.y, selectionStart.y)
+      const width = Math.abs(pos.x - selectionStart.x)
+      const height = Math.abs(pos.y - selectionStart.y)
+
+      selectionRect.setAttrs({ x, y, width, height })
+      layer.draw()
+    })
+
+    // Sélection par rectangle - mouseup
+    stage.on('mouseup', () => {
+      if (!isSelecting || !selectionRect) return
+      isSelecting = false
+
+      // Coordonnées du rectangle de sélection dans l'espace du stage
+      const x1 = selectionStart.x
+      const y1 = selectionStart.y
+      const pos = stage.getPointerPosition()!
+      const x2 = pos.x
+      const y2 = pos.y
+
+      const selBox = {
+        x: Math.min(x1, x2),
+        y: Math.min(y1, y2),
+        width: Math.abs(x2 - x1),
+        height: Math.abs(y2 - y1)
+      }
+
+      selectionRect.destroy()
+      selectionRect = null
+
+      // Ignorer si le rectangle est trop petit (simple clic)
+      if (selBox.width < 5 && selBox.height < 5) {
+        selectedIds.set([])
+        layer.draw()
+        return
+      }
+
+      // Trouver les éléments qui intersectent
+      const selected = $elements.filter((el) => {
+        const shape = layer.findOne(`#${el.id}`)
+        if (!shape) return false
+
+        // Position de la shape dans l'espace du stage (sans scale)
+        const shapePos = shape.getAbsolutePosition()
+        const scaleX = stage.scaleX()
+        const scaleY = stage.scaleY()
+        const stagePos = stage.position()
+
+        const sx = (shapePos.x - stagePos.x) / scaleX
+        const sy = (shapePos.y - stagePos.y) / scaleY
+        const sw = shape.width() * shape.scaleX() || 60
+        const sh = shape.height() * shape.scaleY() || 60
+
+        return (
+          selBox.x < sx + sw &&
+          selBox.x + selBox.width > sx &&
+          selBox.y < sy + sh &&
+          selBox.y + selBox.height > sy
+        )
+      })
+
+      if (selected.length > 0) {
+        selectedIds.set(selected.map((e) => e.id))
+      } else {
+        selectedIds.set([])
+      }
+
+      layer.draw()
+    })
+
+    stage.on('mousedown', (e) => {
       const tool = $activeTool
+
+      // Sélection par rectangle — mode select + clic sur fond
+      if (tool === 'select' && e.target === stage) {
+        isSelecting = true
+        const pos = stage.getPointerPosition()!
+        selectionStart = { x: pos.x, y: pos.y }
+
+        selectionRect = new Konva.Rect({
+          x: pos.x,
+          y: pos.y,
+          width: 0,
+          height: 0,
+          fill: 'rgba(233, 69, 96, 0.1)',
+          stroke: '#e94560',
+          strokeWidth: 1,
+          dash: [4, 4]
+        })
+        layer.add(selectionRect)
+        layer.draw()
+        return
+      }
+
+      // Création de forme — autres outils + clic sur fond
+      if (tool === 'select') return
+      if (e.target !== stage) return
 
       const pos = stage.getPointerPosition()
       if (!pos) return
@@ -700,7 +1033,10 @@
           stroke: '',
           strokeWidth: 0,
           opacity: 1,
-          text: 'Texte'
+          text: 'Texte',
+          fontSize: 24,
+          fontFamily: 'Arial',
+          fontStyle: 'normal'
         }
       }
 
@@ -710,6 +1046,15 @@
       }
     })
   })
+
+  $: {
+    if (stage) {
+      // Ajuster la taille du stage si le format change
+      stage.width($canvasFormat.width)
+      stage.height($canvasFormat.height)
+      layer && layer.draw()
+    }
+  }
 
   $: {
     if (layer && !isTransforming) {
@@ -756,7 +1101,7 @@
               height: el.height,
               scaleX: el.scaleX ?? 1,
               scaleY: el.scaleY ?? 1,
-              rotation: el.rotation ?? 0,
+              rotation: el.rotation ?? 0
             })
           } else if (el.type === 'circle') {
             shape.setAttrs({
@@ -770,7 +1115,7 @@
               y: el.y,
               scaleX: el.scaleX ?? 1,
               scaleY: el.scaleY ?? 1,
-              rotation: el.rotation ?? 0,
+              rotation: el.rotation ?? 0
             })
           } else {
             shape.setAttrs({
@@ -783,11 +1128,23 @@
               scaleX: el.scaleX ?? 1,
               scaleY: el.scaleY ?? 1,
               rotation: el.rotation ?? 0,
+              ...(el.type === 'rect' ? { cornerRadius: el.cornerRadius ?? 0 } : {})
             })
             if (el.type === 'rect') {
               shape.setAttrs({ width: el.width, height: el.height })
             } else if (el.type === 'text' && el.text !== undefined) {
-              shape.setAttrs({ text: el.text })
+              shape.setAttrs({
+                text:
+                  el.type === 'text' && el.textTransform === 'uppercase'
+                    ? el.text.toUpperCase()
+                    : el.type === 'text' && el.textTransform === 'lowercase'
+                      ? el.text.toLowerCase()
+                      : el.text,
+                fontFamily: el.fontFamily ?? 'Arial',
+                fontSize: el.fontSize ?? 24,
+                fontStyle: el.fontStyle ?? 'normal',
+                textDecoration: el.textDecoration ?? ''
+              })
             }
           }
         }
@@ -818,15 +1175,38 @@
     link.click()
     document.body.removeChild(link)
   }
+
+  export async function saveFile(): Promise<void> {
+    await doSave()
+  }
+
+  export async function triggerOpen(): Promise<void> {
+    if (!w.api || typeof w.api.openFile !== 'function') return
+    const content = await w.api.openFile()
+    if (!content) return
+    try {
+      const parsed = JSON.parse(content as string) as CanvasElement[]
+      elements.set(parsed)
+      selectedIds.set([])
+      currentFilePath = null
+      isDirty.set(false)
+      showToast('Fichier ouvert', 'success')
+    } catch {
+      showToast('Fichier invalide ou corrompu', 'error')
+    }
+  }
 </script>
 
 <section class="canvas-area" data-tool={$activeTool}>
-  <div class="canvas-container" bind:this={container}></div>
+  <div
+    class="canvas-container"
+    bind:this={container}
+    style="width: {$canvasFormat.width}px; height: {$canvasFormat.height}px; transform: scale({$zoomLevel});"
+  ></div>
 </section>
 
 <style>
   .canvas-area {
-    flex: 1;
     height: 100vh;
     background-color: #1a1a2e;
     display: flex;
@@ -835,25 +1215,23 @@
     overflow: hidden;
   }
 
-  .canvas-area[data-tool="select"] {
+  .canvas-area[data-tool='select'] {
     cursor: default;
   }
 
-  .canvas-area[data-tool="rect"] {
+  .canvas-area[data-tool='rect'] {
     cursor: crosshair;
   }
 
-  .canvas-area[data-tool="circle"] {
+  .canvas-area[data-tool='circle'] {
     cursor: crosshair;
   }
 
-  .canvas-area[data-tool="text"] {
+  .canvas-area[data-tool='text'] {
     cursor: text;
   }
 
   .canvas-container {
-    width: 800px;
-    height: 600px;
     background-color: #ffffff;
     border-radius: 4px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);

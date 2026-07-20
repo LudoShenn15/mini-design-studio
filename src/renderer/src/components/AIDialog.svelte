@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { elements } from '../store'
+  import { showToast } from '../store'
 
   export let isOpen = false
   export let onImageGenerated: (src: string) => void
@@ -20,33 +20,35 @@
     try {
       // Pollinations.ai - free AI image generation without API key
       const encodedPrompt = encodeURIComponent(prompt.trim())
-      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&nologo=true`
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&nologo=true&seed=${Math.random()}`
 
-      // Preload the image to ensure it's ready
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      
-      await new Promise((resolve, reject) => {
-        img.onload = resolve
-        img.onerror = reject
-        img.src = imageUrl
+      // Use fetch to get the image with proper headers
+      const response = await fetch(imageUrl, {
+        method: 'GET',
+        headers: {
+          Accept: 'image/*'
+        }
       })
 
-      // Convert to base64 to avoid CORS issues
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width
-      canvas.height = img.height
-      const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('Failed to get canvas context')
-      ctx.drawImage(img, 0, 0)
-      const base64 = canvas.toDataURL('image/png')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const blob = await response.blob()
+      // Convert blob to base64
+      const reader = new FileReader()
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
 
       onImageGenerated(base64)
       isOpen = false
       prompt = ''
-    } catch (err) {
+    } catch {
       error = 'Erreur lors de la génération. Veuillez réessayer.'
-      console.error('AI generation error:', err)
+      showToast('Erreur de génération IA', 'error')
     } finally {
       isGenerating = false
     }
@@ -63,24 +65,46 @@
 </script>
 
 {#if isOpen}
-  <div class="overlay" on:click={() => isOpen = false}>
-    <div class="dialog" on:click|stopPropagation>
-      <h2>Générer avec IA</h2>
+  <div
+    class="overlay"
+    role="button"
+    tabindex="0"
+    aria-label="Fermer"
+    on:click={() => (isOpen = false)}
+    on:keydown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        isOpen = false
+      }
+    }}
+  >
+    <div
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      tabindex="-1"
+      on:click|stopPropagation
+      on:keydown={(e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          isOpen = false
+        }
+      }}
+    >
+      <h2 id="dialog-title">Générer avec IA</h2>
       <p class="subtitle">Décrivez l'image que vous souhaitez créer</p>
-      
       <textarea
         bind:value={prompt}
         placeholder="Ex: Un paysage futuriste avec des néons..."
         on:keydown={handleKeydown}
         disabled={isGenerating}
       ></textarea>
-      
       {#if error}
         <p class="error">{error}</p>
       {/if}
-      
       <div class="actions">
-        <button class="cancel" on:click={() => isOpen = false} disabled={isGenerating}>
+        <button class="cancel" on:click={() => (isOpen = false)} disabled={isGenerating}>
           Annuler
         </button>
         <button class="generate" on:click={generateImage} disabled={isGenerating || !prompt.trim()}>
