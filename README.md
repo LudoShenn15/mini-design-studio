@@ -153,7 +153,7 @@ mini-design-studio/
 
 ### 👨‍💻 Auteur
 
-**Komi Ludovic AGBO** — Creative Technologist · Développeur Frontend · Graphiste Freelance
+**Komi Ludovic AGBO** — Creative Technologist · Développeur Fullstack · Graphiste Freelance
 - GitHub : [@LudoShenn15](https://github.com/LudoShenn15)
 - Email : sherfeldstr@gmail.com
 
@@ -215,7 +215,7 @@ npm run dev
 
 ### 👨‍💻 Author
 
-**Komi Ludovic AGBO** — Creative Technologist · Frontend Developer · Freelance Graphic Designer
+**Komi Ludovic AGBO** — Creative Technologist · Fullstack Developer · Freelance Graphic Designer
 - GitHub : [@LudoShenn15](https://github.com/LudoShenn15)
 
 ### 📝 License
