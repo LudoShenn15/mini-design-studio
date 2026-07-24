@@ -147,6 +147,9 @@ mini-design-studio/
 ├── package.json
 └── electron.vite.config.ts
 ```
+# 🎥 Demonstration
+
+[![Voir la démo](https://img.shields.io/badge/▶_Voir_la_démo-e94560?style=for-the-badge)](Ihttps://drive.google.com/file/d/1_vJ0dULJGZzCSYf4IEvHU6HN8AUSihe_/view?usp=drive_link)
 
 ### 👨‍💻 Auteur
 
@@ -206,7 +209,7 @@ cd mini-design-studio
 npm install
 npm run dev
 ```
-## 🎥 Démonstration
+## 🎥 Demonstration
 
 [![Voir la démo](https://img.shields.io/badge/▶_Voir_la_démo-e94560?style=for-the-badge)](Ihttps://drive.google.com/file/d/1_vJ0dULJGZzCSYf4IEvHU6HN8AUSihe_/view?usp=drive_link)
 
